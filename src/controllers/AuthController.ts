@@ -92,22 +92,10 @@ class AuthController {
       });
 
       if (candidate) {
-        if (candidate.cs2_data?.roles && candidate.cs2_data?.maps) {
-          const maps = candidate.cs2_data.maps.map((map) => map.cs2Map.name); //фильтрую потому что orm возвращает объекты вместо строчек
-          const roles = candidate.cs2_data.roles.map((role) => role.cs2Role.name);
-          return res.status(200).json({
-            ...candidate,
-            cs2_data: { ...candidate.cs2_data, roles: roles, maps: maps },
-            password: undefined,
-            email: undefined,
-          });
-        }
-
         return res.status(200).json({
           ...candidate,
           password: undefined,
           email: undefined,
-          cs2_data: undefined,
         });
       } else return res.json(false);
     } catch (e) {
