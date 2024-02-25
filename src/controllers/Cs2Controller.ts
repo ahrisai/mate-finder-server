@@ -80,6 +80,15 @@ class Cs2Contoller {
       }
     }
   };
+  deleteCs2data = async (req: Request, res: Response) => {
+    const user: JwtUser = req.user as JwtUser;
+    try {
+      await prisma.cs2_data.delete({ where: { userId: user.id } });
+      return res.status(200).json('deleted successfully');
+    } catch (error) {
+      console.log('не удалил кс2 дату');
+    }
+  };
 }
 
 export default new Cs2Contoller();

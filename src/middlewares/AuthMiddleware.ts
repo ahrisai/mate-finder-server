@@ -11,6 +11,7 @@ export default function (req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.cookies.token;
     if (!token) {
+      console.log('token sdox');
       return res.status(403).json({ message: 'user not authorized' });
     }
 

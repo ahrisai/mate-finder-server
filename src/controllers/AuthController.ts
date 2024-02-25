@@ -63,11 +63,13 @@ class AuthController {
       return res.status(404).json('Uncorrect login or password');
     }
     const token = generateAccessToken(candidate.id, candidate.nickname);
+    const cookieLifeTime = 10 * 24 * 60 * 60 * 1000;
     return res
       .cookie('token', token, {
         httpOnly: false,
         secure: true,
         sameSite: 'none',
+        maxAge: cookieLifeTime,
       })
       .json({ ...candidate, password: undefined, email: undefined });
   };
