@@ -19,6 +19,7 @@ model User {
   user_avatar  String?
   description  String?
   birthday     String
+  age Int
   valorant_data Valorant_Data? 
   cs2_data     Cs2_data?
   teams         Team[]

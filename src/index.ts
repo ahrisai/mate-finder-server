@@ -7,6 +7,9 @@ import AuthMiddleware from './middlewares/AuthMiddleware.js';
 import Cs2Router from './routes/cs2.routes.js';
 import playerRouter from './routes/Player.routes.js';
 import userRouter from './routes/user.routes.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const allowedOrigins = ['http://localhost:5173', 'http://26.173.11.127:5173', 'https://squadlink.vercel.app'];
 
