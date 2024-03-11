@@ -1,24 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-export async function getPlayersWithFilters(
-  gender: string,
-  pageNumber: number,
-  searchQuery: string,
-  minAge: number,
-  maxAge: number,
-  maxEloValue: number,
-  minEloValue: number,
-  maxHsValue: number,
-  minHsValue: number,
-  maxKdValue: number,
-  minKdValue: number,
-  maxWinrateValue: number,
-  minWinrateValue: number,
-  roles: string[],
-  maps: string[]
-) {
+export const getPlayersWithFilters = async (
+  gender?: string,
+  pageNumber: number = 1,
+  searchQuery?: string,
+  minAge?: number,
+  maxAge?: number,
+  maxEloValue?: number,
+  minEloValue?: number,
+  maxHsValue?: number,
+  minHsValue?: number,
+  maxKdValue?: number,
+  minKdValue?: number,
+  maxWinrateValue?: number,
+  minWinrateValue?: number,
+  roles?: string[],
+  maps?: string[]
+) => {
   const playersPerPage = 10;
+  console.log(pageNumber);
+
   const skip = (pageNumber - 1) * playersPerPage;
   const ageClause = {
     gte: minAge ? minAge : undefined,
@@ -62,33 +64,28 @@ export async function getPlayersWithFilters(
         hs: hsClause,
         winrate: winrateClause,
         kd: kdClause,
-        // добавляем проверки на длину массивов maps и roles
-        // если массив пустой, то пропускаем фильтрацию по этому полю
-        // если массив не пустой, то используем оператор in
-        roles:
-          roles.length > 0
-            ? {
-                some: {
-                  cs2Role: {
-                    name: {
-                      in: roles,
-                    },
+        roles: roles
+          ? {
+              some: {
+                cs2Role: {
+                  name: {
+                    in: roles,
                   },
                 },
-              }
-            : {},
-        maps:
-          maps.length > 0
-            ? {
-                some: {
-                  cs2Map: {
-                    name: {
-                      in: maps,
-                    },
+              },
+            }
+          : {},
+        maps: maps
+          ? {
+              some: {
+                cs2Map: {
+                  name: {
+                    in: maps,
                   },
                 },
-              }
-            : {},
+              },
+            }
+          : {},
       },
     },
     include: {
@@ -100,15 +97,19 @@ export async function getPlayersWithFilters(
       },
     },
 
-    skip: skip,
     take: playersPerPage,
+    skip: skip,
   });
+  console.log(players);
+  if (players.length) {
+    const totalCount = players.length / playersPerPage;
+    let pages = 0;
+    if (totalCount > 1.2 && totalCount < 2) {
+      pages = Math.round(totalCount) + 1;
+    } else pages = Math.round(players.length / playersPerPage);
 
-  const totalCount = players.length / playersPerPage;
-  let pages = 0;
-  if (totalCount > 1.2 && totalCount < 2) {
-    pages = Math.round(totalCount) + 1;
-  } else pages = Math.round(players.length / playersPerPage);
-
-  return { players, pages };
-}
+    return { players, pages };
+  } else {
+    return 0;
+  }
+};

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
+import { getPlayersWithFilters } from '../util/getPlayersWithFilters.js';
 
 const prisma = new PrismaClient();
 
@@ -27,6 +28,61 @@ class PlayerController {
       }
     } catch (error) {
       return res.status(500).json('eternal server error =<');
+    }
+  };
+  fetchPlayers = async (req: Request, res: Response) => {
+    try {
+      const {
+        gender,
+        page,
+        searchQuery,
+        minAge,
+        maxAge,
+        maxEloValue,
+        minEloValue,
+        maxHsValue,
+        minHsValue,
+        maxKdValue,
+        minKdValue,
+        maxWinrateValue,
+        minWinrateValue,
+        roles,
+        maps,
+      } = req.query;
+
+      // Преобразование типов при необходимости
+      const pageNumberValue = Number(page);
+      const minAgeValue = Number(minAge);
+      const maxAgeValue = Number(maxAge);
+      const maxEloValueNumber = Number(maxEloValue);
+      const minEloValueNumber = Number(minEloValue);
+      const maxHsValueNumber = Number(maxHsValue);
+      const minHsValueNumber = Number(minHsValue);
+      const maxKdValueNumber = Number(maxKdValue);
+      const minKdValueNumber = Number(minKdValue);
+      const maxWinrateValueNumber = Number(maxWinrateValue);
+      const minWinrateValueNumber = Number(minWinrateValue);
+
+      const playersAndPages = await getPlayersWithFilters(
+        gender as string,
+        pageNumberValue,
+        searchQuery as string,
+        minAgeValue,
+        maxAgeValue,
+        maxEloValueNumber,
+        minEloValueNumber,
+        maxHsValueNumber,
+        minHsValueNumber,
+        maxKdValueNumber,
+        minKdValueNumber,
+        maxWinrateValueNumber,
+        minWinrateValueNumber,
+        roles as string[],
+        maps as string[]
+      );
+      return res.status(202).json(playersAndPages);
+    } catch (error) {
+      console.log(error);
     }
   };
 }
