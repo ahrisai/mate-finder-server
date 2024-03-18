@@ -21,7 +21,7 @@ export const getPlayersWithFilters = async (
   const playersPerPage = 10;
   console.log(pageNumber);
 
-  const skip = (pageNumber - 1) * playersPerPage;
+  const skip: number = (pageNumber - 1) * playersPerPage;
   const ageClause = {
     gte: minAge ? minAge : undefined,
     lte: maxAge ? maxAge : undefined,
@@ -103,10 +103,10 @@ export const getPlayersWithFilters = async (
   console.log(players);
   if (players.length) {
     const totalCount = players.length / playersPerPage;
-    let pages = 0;
+    let pages = 1;
     if (totalCount > 1.2 && totalCount < 2) {
       pages = Math.round(totalCount) + 1;
-    } else pages = Math.round(players.length / playersPerPage);
+    }
 
     return { players, pages };
   } else {
