@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const getPlayersWithFilters = async (
+  nickname: string,
   gender?: string,
   pageNumber: number = 1,
   searchQuery?: string,
@@ -19,7 +20,6 @@ export const getPlayersWithFilters = async (
   maps?: string[]
 ) => {
   const playersPerPage = 10;
-  console.log(pageNumber);
 
   const skip: number = (pageNumber - 1) * playersPerPage;
   const ageClause = {
@@ -51,11 +51,11 @@ export const getPlayersWithFilters = async (
     where: {
       nickname: searchQuery
         ? {
-            not: 'admin',
+            not: { in: ['admin', nickname] },
             contains: searchQuery,
           }
         : {
-            not: 'admin',
+            not: { in: ['admin', nickname] },
           },
       gender: gender !== '' ? gender : {},
       age: ageClause,

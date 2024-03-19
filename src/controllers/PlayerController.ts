@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import { getPlayersWithFilters } from '../util/getPlayersWithFilters.js';
+import { JwtUser } from '../queryTypes.js';
 
 const prisma = new PrismaClient();
 
@@ -32,6 +33,7 @@ class PlayerController {
   };
   fetchPlayers = async (req: Request, res: Response) => {
     try {
+      const { name } = req.user as JwtUser;
       const {
         gender,
         page,
@@ -64,6 +66,7 @@ class PlayerController {
       const minWinrateValueNumber = Number(minWinrateValue);
 
       const playersAndPages = await getPlayersWithFilters(
+        name,
         gender as string,
         pageNumberValue,
         searchQuery as string,
