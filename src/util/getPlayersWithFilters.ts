@@ -100,12 +100,55 @@ export const getPlayersWithFilters = async (
     take: playersPerPage,
     skip: skip,
   });
-  console.log(players);
+
+  const totalCount = await prisma.user.count({
+    where: {
+      nickname: searchQuery
+        ? {
+            not: { in: ['admin', nickname] },
+            contains: searchQuery,
+          }
+        : {
+            not: { in: ['admin', nickname] },
+          },
+      gender: gender !== '' ? gender : {},
+      age: ageClause,
+      cs2_data: {
+        elo: eloClause,
+        hs: hsClause,
+        winrate: winrateClause,
+        kd: kdClause,
+        roles: roles
+          ? {
+              some: {
+                cs2Role: {
+                  name: {
+                    in: roles,
+                  },
+                },
+              },
+            }
+          : {},
+        maps: maps
+          ? {
+              some: {
+                cs2Map: {
+                  name: {
+                    in: maps,
+                  },
+                },
+              },
+            }
+          : {},
+      },
+    },
+  });
   if (players.length) {
-    const totalCount = players.length / playersPerPage;
+    const totalPages = totalCount / playersPerPage;
+    console.log(totalPages);
     let pages = 1;
-    if (totalCount > 1.2 && totalCount < 2) {
-      pages = Math.round(totalCount) + 1;
+    if (totalPages > 1 && totalPages < 2) {
+      pages = Math.round(totalPages) + 1;
     }
 
     return { players, pages };
