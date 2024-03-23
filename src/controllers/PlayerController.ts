@@ -34,6 +34,7 @@ class PlayerController {
   fetchPlayers = async (req: Request, res: Response) => {
     try {
       const { name } = req.user as JwtUser;
+      console.log(req.query);
       const {
         gender,
         page,
@@ -48,6 +49,8 @@ class PlayerController {
         minKdValue,
         maxWinrateValue,
         minWinrateValue,
+        minMatchesValue,
+        maxMatchesValue,
         roles,
         maps,
       } = req.query;
@@ -64,6 +67,8 @@ class PlayerController {
       const minKdValueNumber = Number(minKdValue);
       const maxWinrateValueNumber = Number(maxWinrateValue);
       const minWinrateValueNumber = Number(minWinrateValue);
+      const minMatchesValueNumber = Number(minMatchesValue);
+      const maxMatchesValueNumber = Number(maxMatchesValue);
 
       const playersAndPages = await getPlayersWithFilters(
         name,
@@ -80,6 +85,8 @@ class PlayerController {
         minKdValueNumber,
         maxWinrateValueNumber,
         minWinrateValueNumber,
+        minMatchesValueNumber,
+        maxMatchesValueNumber,
         roles as string[],
         maps as string[]
       );

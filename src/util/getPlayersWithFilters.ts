@@ -16,6 +16,8 @@ export const getPlayersWithFilters = async (
   minKdValue?: number,
   maxWinrateValue?: number,
   minWinrateValue?: number,
+  minMatchesValue?: number,
+  maxMatchesValue?: number,
   roles?: string[],
   maps?: string[]
 ) => {
@@ -47,6 +49,11 @@ export const getPlayersWithFilters = async (
     lte: maxKdValue ? maxKdValue : undefined,
   };
 
+  const matchesClause = {
+    gte: minMatchesValue ? minMatchesValue : undefined,
+    lte: maxMatchesValue ? maxMatchesValue : undefined,
+  };
+
   const players = await prisma.user.findMany({
     where: {
       nickname: searchQuery
@@ -57,13 +64,18 @@ export const getPlayersWithFilters = async (
         : {
             not: { in: ['admin', nickname] },
           },
+
       gender: gender !== '' ? gender : {},
       age: ageClause,
+
       cs2_data: {
+        NOT: undefined,
         elo: eloClause,
         hs: hsClause,
         winrate: winrateClause,
         kd: kdClause,
+        matches: matchesClause,
+
         roles: roles
           ? {
               some: {
@@ -99,6 +111,7 @@ export const getPlayersWithFilters = async (
 
     take: playersPerPage,
     skip: skip,
+    orderBy: { cs2_data: { matches: 'asc' } },
   });
 
   const totalCount = await prisma.user.count({
@@ -114,10 +127,13 @@ export const getPlayersWithFilters = async (
       gender: gender !== '' ? gender : {},
       age: ageClause,
       cs2_data: {
+        NOT: undefined,
         elo: eloClause,
         hs: hsClause,
         winrate: winrateClause,
         kd: kdClause,
+        matches: matchesClause,
+
         roles: roles
           ? {
               some: {
@@ -145,7 +161,6 @@ export const getPlayersWithFilters = async (
   });
   if (players.length) {
     const totalPages = totalCount / playersPerPage;
-    console.log(totalPages);
     let pages = 1;
     if (totalPages > 1 && totalPages < 2) {
       pages = Math.round(totalPages) + 1;
