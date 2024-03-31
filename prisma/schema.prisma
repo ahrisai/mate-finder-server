@@ -23,6 +23,7 @@ model User {
   valorant_data Valorant_Data? 
   cs2_data     Cs2_data?
   teams         Team[]
+  chats Chat[]
 }
 
 model Valorant_Data {
@@ -88,4 +89,22 @@ model Cs2_dataCs2Maps {
 
   @@id([cs2_dataId, cs2MapId])
 
+}
+
+
+model Message {
+  id       Int    @id @default(autoincrement())
+  text     String
+  time     String
+  checked  Boolean
+  nickname String
+  chat     Chat   @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
+  roomId   String
+}
+
+model Chat {
+  id       Int       @id @default(autoincrement())
+  roomId   String    @unique
+  messages Message[]
+  members User[]
 }

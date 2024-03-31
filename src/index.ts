@@ -8,6 +8,7 @@ import Cs2Router from './routes/cs2.routes.js';
 import playerRouter from './routes/Player.routes.js';
 import userRouter from './routes/user.routes.js';
 import dotenv from 'dotenv';
+import chatRouter from './routes/chat.routes.js';
 
 dotenv.config();
 
@@ -30,7 +31,8 @@ app
   .use('/api', authRouter)
   .use('/api', Cs2Router)
   .use('/api', playerRouter)
-  .use('/api', userRouter);
+  .use('/api', userRouter)
+  .use('/api', chatRouter);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
