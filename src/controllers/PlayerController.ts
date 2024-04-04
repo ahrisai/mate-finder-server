@@ -34,7 +34,6 @@ class PlayerController {
   fetchPlayers = async (req: Request, res: Response) => {
     try {
       const { name } = req.user as JwtUser;
-      console.log(req.query);
       const {
         gender,
         page,

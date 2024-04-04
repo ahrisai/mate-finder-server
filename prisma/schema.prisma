@@ -95,7 +95,7 @@ model Cs2_dataCs2Maps {
 model Message {
   id       Int    @id @default(autoincrement())
   text     String
-  time     String
+  time     DateTime
   checked  Boolean
   nickname String
   chat     Chat   @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
