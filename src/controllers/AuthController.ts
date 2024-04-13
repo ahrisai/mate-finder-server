@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { secretKey } from '../config.js';
+import { JwtUser } from '../queryTypes.js';
 
 const generateAccessToken = (id: number, name: string) => {
   const payload = {
@@ -51,6 +52,9 @@ class AuthController {
             maps: { select: { cs2Map: { select: { name: true } } } },
           },
         },
+        friends: true,
+        receivedRequests: { where: { toUser: { nickname: nickname } } },
+        sentRequests: { where: { fromUser: { nickname: nickname } } },
       },
     });
     if (!candidate) {
@@ -79,7 +83,7 @@ class AuthController {
       if (!token) {
         return res.status(404).json({ message: 'user not authorized' });
       }
-      const user: JwtPayload = jwt.verify(token, secretKey) as JwtPayload;
+      const user: JwtUser = jwt.verify(token, secretKey) as JwtUser;
 
       const candidate = await prisma.user.findFirst({
         where: { nickname: user.name },
@@ -90,6 +94,9 @@ class AuthController {
               maps: { select: { cs2Map: { select: { name: true } } } },
             },
           },
+          friends: true,
+          receivedRequests: { where: { toUserId: user.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
+          sentRequests: { where: { fromUserId: user.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
         },
       });
 

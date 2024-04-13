@@ -10,20 +10,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           Int           @id @default(autoincrement())
-  nickname     String
-  email        String
-  password     String
-  gender       String
-  user_avatar  String?
-  description  String?
-  birthday     String
-  age Int
-  valorant_data Valorant_Data? 
-  cs2_data     Cs2_data?
-  teams         Team[]
-  chats Chat[]
+  model User {
+    id           Int           @id @default(autoincrement())
+    nickname     String
+    email        String
+    password     String
+    gender       String
+    user_avatar  String?
+    description  String?
+    birthday     String
+    age Int
+    valorant_data Valorant_Data? 
+    cs2_data     Cs2_data?
+    teams         Team[]
+    chats Chat[]
+    
+   sentRequests      FriendRequest[] @relation("FriendRequestsSent")
+  receivedRequests  FriendRequest[] @relation("FriendRequestsReceived")
+    friends         User[] @relation("friends")
+  friendsRelation User[] @relation("friends")
+  }
+
+model FriendRequest {
+  id         Int      @id @default(autoincrement())
+  fromUserId Int
+  toUserId   Int
+  createdAt  DateTime @default(now())
+ fromUser   User     @relation("FriendRequestsSent", fields: [fromUserId], references: [id])
+  toUser     User     @relation("FriendRequestsReceived", fields: [toUserId], references: [id])
 }
 
 model Valorant_Data {
