@@ -53,8 +53,14 @@ class AuthController {
           },
         },
         friends: true,
-        receivedRequests: { where: { toUser: { nickname: nickname } } },
-        sentRequests: { where: { fromUser: { nickname: nickname } } },
+        receivedRequests: {
+          where: { toUser: { nickname: nickname } },
+          include: { fromUser: { select: { nickname: true, user_avatar: true } } },
+        },
+        sentRequests: {
+          where: { fromUser: { nickname: nickname } },
+          include: { toUser: { select: { nickname: true, user_avatar: true } } },
+        },
       },
     });
     if (!candidate) {
