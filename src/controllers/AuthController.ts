@@ -52,7 +52,7 @@ class AuthController {
             maps: { select: { cs2Map: { select: { name: true } } } },
           },
         },
-        friends: true,
+        friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
         receivedRequests: {
           where: { toUser: { nickname: nickname } },
           include: { fromUser: { select: { nickname: true, user_avatar: true } } },
@@ -100,7 +100,8 @@ class AuthController {
               maps: { select: { cs2Map: { select: { name: true } } } },
             },
           },
-          friends: true,
+          friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
+
           receivedRequests: { where: { toUserId: user.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
           sentRequests: { where: { fromUserId: user.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
         },
