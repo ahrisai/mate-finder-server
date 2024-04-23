@@ -29,6 +29,7 @@ datasource db {
   receivedRequests  FriendRequest[] @relation("FriendRequestsReceived")
     friends         User[] @relation("friends")
   friendsRelation User[] @relation("friends")
+  requestsToTeam TeamRequest[]
   }
 
 model FriendRequest {
@@ -52,7 +53,22 @@ model Team {
   id     Int   @id @default(autoincrement())
   user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int @unique 
-  
+  name String
+  description String?
+  public Boolean
+  avatar String
+  teamRequests TeamRequest[]
+  neededRoles Cs2Roles[]
+}
+model TeamRequest{
+  id     Int   @id @default(autoincrement())
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId Int 
+  toUserId   Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+  role Cs2Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId Int 
 }
 
 
@@ -77,6 +93,8 @@ model Cs2Roles {
   id   Int    @id @default(autoincrement())
   name String @unique
   roles        Cs2_dataCs2Roles[]
+  neededTeamRole Team[]
+  teamRequest TeamRequest[]
 }
 
 model Cs2Maps {
