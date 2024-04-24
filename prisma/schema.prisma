@@ -59,14 +59,14 @@ model Team {
   avatar String
   teamRequests TeamRequest[]
   neededRoles Cs2Roles[]
+  ownerRole String
 }
 model TeamRequest{
   id     Int   @id @default(autoincrement())
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId Int 
+  user User @relation(fields: [toUserId], references: [id], onDelete: Cascade)
   toUserId   Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
   role Cs2Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId Int 
 }
