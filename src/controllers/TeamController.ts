@@ -39,7 +39,8 @@ class TeamController {
             },
           },
         });
-        return res.status(200).json(team);
+        const returnTeam = await prisma.team.findFirst({ where: { id: team.id }, include: { neededRoles: true, teamRequests: true } });
+        return res.status(200).json(returnTeam);
       }
     } catch (error) {
       console.log(error);
