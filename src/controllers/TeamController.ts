@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 
 class TeamController {
   createTeam = async (req: Request, res: Response) => {
-    const jwtUser = req.user as JwtUser;
     const userId = Number(req.params.userId);
     const newTeam = req.body;
     console.log(userId);
@@ -38,9 +37,10 @@ class TeamController {
               })),
             },
           },
+          include: { neededRoles: true, teamRequests: { include: { role: true, team: true, user: true } } },
         });
-        const returnTeam = await prisma.team.findFirst({ where: { id: team.id }, include: { neededRoles: true, teamRequests: true } });
-        return res.status(200).json(returnTeam);
+
+        return res.status(200).json(team);
       }
     } catch (error) {
       console.log(error);
