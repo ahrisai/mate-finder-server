@@ -37,7 +37,11 @@ class TeamController {
               })),
             },
           },
-          include: { neededRoles: true, teamRequests: { include: { role: true, team: true, user: true } } },
+          include: {
+            neededRoles: true,
+            teamRequests: { include: { role: true, team: true, user: true } },
+            members: { include: { role: true, user: true } },
+          },
         });
 
         return res.status(200).json(team);

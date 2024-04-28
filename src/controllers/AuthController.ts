@@ -61,7 +61,8 @@ class AuthController {
           where: { fromUser: { nickname: nickname } },
           include: { toUser: { select: { nickname: true, user_avatar: true } } },
         },
-        teams: { include: { neededRoles: true, teamRequests: true } },
+        teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
+
         requestsToTeam: { include: { team: true, role: true } },
         memberOf: { include: { role: true, team: true } },
       },
@@ -107,7 +108,7 @@ class AuthController {
 
           receivedRequests: { where: { toUserId: user.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
           sentRequests: { where: { fromUserId: user.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
-          teams: { include: { neededRoles: true, teamRequests: true } },
+          teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
           requestsToTeam: { include: { team: true, role: true } },
           memberOf: { include: { role: true, team: true } },
         },
