@@ -17,6 +17,7 @@ const allowedOrigins = ['http://localhost:5173', 'http://26.173.11.127:5173', 'h
 
 const app = express();
 app
+
   .use(
     cors({
       origin: allowedOrigins,
@@ -26,9 +27,11 @@ app
   .use(express.json())
   .use(cookieParser())
   .use(AuthMiddleware)
-  .get('/', (req: Request, res: Response) => {
-    res.send('hello world');
+  .get('/', (req: Request, res: Response, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
   })
+
   .use('/api', authRouter)
   .use('/api', Cs2Router)
   .use('/api', playerRouter)
