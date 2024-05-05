@@ -19,6 +19,11 @@ class PlayerController {
               maps: { select: { cs2Map: { select: { name: true } } } },
             },
           },
+          friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
+
+          teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
+          requestsToTeam: { include: { team: true, role: true } },
+          memberOf: { include: { role: true, team: { include: { members: true } } } },
         },
       });
 

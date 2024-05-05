@@ -10,7 +10,11 @@ class ChatController {
     try {
       const chats = await prisma.chat.findMany({
         where: { members: { some: { id: jwtUser.id } } },
-        include: { members: { select: { id: true, nickname: true, user_avatar: true } }, messages: { orderBy: { time: 'asc' } } },
+        include: {
+          members: { select: { id: true, nickname: true, user_avatar: true } },
+          messages: { orderBy: { time: 'asc' } },
+          team: true,
+        },
       });
 
       return res.status(200).json(chats);

@@ -36,11 +36,20 @@ class TeamController {
                 },
               })),
             },
+            chat: { create: { roomId: newTeam.name, members: { connect: { id: userId } } } },
           },
+
           include: {
             neededRoles: true,
             teamRequests: { include: { role: true, team: true, user: true } },
             members: { include: { role: true, user: true } },
+            chat: {
+              include: {
+                messages: true,
+                team: { select: { name: true, avatar: true } },
+                members: { select: { user_avatar: true, nickname: true } },
+              },
+            },
           },
         });
 
@@ -48,6 +57,35 @@ class TeamController {
       }
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  fetchTeam = async (req: Request, res: Response) => {
+    const { name } = req.params;
+
+    if (name) {
+      const team = await prisma.team.findFirst({
+        where: { name: name },
+
+        include: {
+          members: { include: { user: { include: { cs2_data: true } }, role: true } },
+          neededRoles: true,
+          user: { select: { nickname: true, user_avatar: true, cs2_data: true } },
+          teamRequests: { include: { role: true, user: { include: { cs2_data: true } } } },
+          chat: {
+            include: {
+              messages: true,
+              team: { select: { name: true, avatar: true } },
+              members: { select: { user_avatar: true, nickname: true } },
+            },
+          },
+        },
+      });
+      if (team) {
+        return res.status(202).json(team);
+      } else {
+        return res.status(404).json('not found');
+      }
     }
   };
 }

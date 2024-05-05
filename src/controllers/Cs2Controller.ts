@@ -4,16 +4,25 @@ import { Cs2Data, JwtUser } from '../queryTypes.js';
 import faceitParser from '../util/faceitParser.js';
 import axios from 'axios';
 import cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
+import { setTimeout } from 'timers/promises';
 const prisma = new PrismaClient();
 
 class Cs2Contoller {
   updateCs2Data = async (req: Request, res: Response) => {
     try {
       const steamId = req.query.steamId as string;
+      console.log(steamId);
       const user = req.user as JwtUser;
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      page.setDefaultTimeout(5000);
 
-      const { data } = await axios.get<string>(`https://faceitfinder.com/profile/${steamId}`);
+      await page.goto(`https://faceitfinder.com/profile/${steamId}`, { waitUntil: 'networkidle0' });
 
+      const data = await page.evaluate(() => document.documentElement.outerHTML);
+      page.close();
+      browser.close();
       const $ = cheerio.load(data);
 
       const faceitData = $('.account-faceit-stats-single').text();

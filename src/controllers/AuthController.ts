@@ -64,7 +64,7 @@ class AuthController {
         teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
 
         requestsToTeam: { include: { team: true, role: true } },
-        memberOf: { include: { role: true, team: true } },
+        memberOf: { include: { role: true, team: { include: { members: true } } } },
       },
     });
     if (!candidate) {
@@ -110,7 +110,7 @@ class AuthController {
           sentRequests: { where: { fromUserId: user.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
           teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
           requestsToTeam: { include: { team: true, role: true } },
-          memberOf: { include: { role: true, team: true } },
+          memberOf: { include: { role: true, team: { include: { members: true } } } },
         },
       });
 

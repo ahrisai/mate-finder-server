@@ -28,7 +28,8 @@
     "passport": "^0.7.0",
     "passport-steam": "^1.0.18",
     "pg": "^8.11.3",
-    "prisma": "^5.7.1"
+    "prisma": "^5.7.1",
+    "puppeteer": "^22.7.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
