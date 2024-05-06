@@ -27,6 +27,7 @@ class UserController {
           receivedRequests: { where: { toUserId: jwtUser.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
           sentRequests: { where: { fromUserId: jwtUser.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
           teams: { include: { members: { include: { user: true, role: true } } } },
+          memberOf: { include: { role: true, team: true } },
         },
       });
       res.status(200).json(newUser);
