@@ -31,6 +31,8 @@ datasource db {
     friends         User[] @relation("friends")
   friendsRelation User[] @relation("friends")
   requestsToTeam TeamRequest[]
+  checkedMessages CheckedBy[]
+  messages Message[]
   }
 
 model FriendRequest {
@@ -46,7 +48,6 @@ model Valorant_Data {
   id           Int    @id @default(autoincrement())
   user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int    @unique
-  
 }
 
 
@@ -143,10 +144,23 @@ model Message {
   id       Int    @id @default(autoincrement())
   text     String
   time     DateTime
-  checked  Boolean
-  nickname String
+  checked  CheckedBy[]
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
   chat     Chat   @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
   roomId   String
+}
+
+
+
+
+model CheckedBy {
+  id         Int      @id @default(autoincrement())
+  isChecked  Boolean
+  userId     Int
+  messageId  Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
 
 model Chat {

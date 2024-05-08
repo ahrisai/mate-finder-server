@@ -45,7 +45,12 @@ class TeamController {
             members: { include: { role: true, user: true } },
             chat: {
               include: {
-                messages: true,
+                messages: {
+                  include: {
+                    user: { select: { id: true, nickname: true, user_avatar: true } },
+                    checked: { include: { user: { select: { id: true } } } },
+                  },
+                },
                 team: { select: { name: true, avatar: true } },
                 members: { select: { user_avatar: true, nickname: true } },
               },
@@ -74,7 +79,12 @@ class TeamController {
           teamRequests: { include: { role: true, user: { include: { cs2_data: true } } } },
           chat: {
             include: {
-              messages: true,
+              messages: {
+                include: {
+                  user: { select: { id: true, nickname: true, user_avatar: true } },
+                  checked: { include: { user: { select: { id: true } } } },
+                },
+              },
               team: { select: { name: true, avatar: true } },
               members: { select: { user_avatar: true, nickname: true } },
             },

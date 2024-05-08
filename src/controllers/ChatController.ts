@@ -12,7 +12,13 @@ class ChatController {
         where: { members: { some: { id: jwtUser.id } } },
         include: {
           members: { select: { id: true, nickname: true, user_avatar: true } },
-          messages: { orderBy: { time: 'asc' } },
+          messages: {
+            orderBy: { time: 'asc' },
+            include: {
+              user: { select: { nickname: true, id: true, user_avatar: true } },
+              checked: { include: { user: { select: { id: true, nickname: true } } } },
+            },
+          },
           team: true,
         },
       });
