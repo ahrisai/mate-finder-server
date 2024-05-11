@@ -23,11 +23,17 @@ class UserController {
             },
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
+          receivedRequests: {
+            where: { toUser: { nickname: jwtUser.name } },
+            include: { fromUser: { select: { nickname: true, user_avatar: true } } },
+          },
+          sentRequests: {
+            include: { toUser: { select: { nickname: true, user_avatar: true } } },
+          },
+          teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
 
-          receivedRequests: { where: { toUserId: jwtUser.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
-          sentRequests: { where: { fromUserId: jwtUser.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
-          teams: { include: { members: { include: { user: true, role: true } } } },
-          memberOf: { include: { role: true, team: true } },
+          requestsToTeam: { include: { team: true, role: true } },
+          memberOf: { include: { role: true, team: { include: { members: true } } } },
         },
       });
       res.status(200).json(newUser);

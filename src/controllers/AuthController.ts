@@ -58,7 +58,6 @@ class AuthController {
           include: { fromUser: { select: { nickname: true, user_avatar: true } } },
         },
         sentRequests: {
-          where: { fromUser: { nickname: nickname } },
           include: { toUser: { select: { nickname: true, user_avatar: true } } },
         },
         teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },

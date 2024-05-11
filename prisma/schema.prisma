@@ -84,6 +84,7 @@ model TeamRequest{
   toUserId   Int
   role Cs2Roles @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId Int 
+  isFromTeam Boolean
 }
 
 
