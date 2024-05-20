@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Team } from '@prisma/client';
 import { Request, Response } from 'express';
-import { JwtUser } from '../queryTypes.js';
+import { emitter } from '../Emitter.js';
+import { FETCH_TEAM_EVENT } from '../consts/TeamRequests.js';
 
 const prisma = new PrismaClient();
 
@@ -97,6 +98,29 @@ class TeamController {
         return res.status(404).json('not found');
       }
     }
+  };
+
+  fetchUpdatedTeam = async (req: Request, res: Response) => {
+    const { name } = req.params;
+    console.log(req.body);
+    emitter.once(FETCH_TEAM_EVENT, (team) => {
+      if (team.name == name) return res.status(200).json(team);
+    });
+  };
+
+  updateTeam = async (req: Request, res: Response) => {
+    const { name } = req.params;
+    console.log(req.body);
+    // if (name) {
+    //   const team = await prisma.team.update({ data: updatedTeam });
+    //   if (team) {
+    //     return res.status(202).json(team);
+    //   } else {
+    //     return res.status(404).json('not found');
+    //   }
+    // }
+    // emitter.emit(FETCH_TEAM_EVENT,);
+    return res.status(200);
   };
 }
 
