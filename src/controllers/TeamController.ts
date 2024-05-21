@@ -42,6 +42,7 @@ class TeamController {
 
           include: {
             neededRoles: true,
+            user: true,
             teamRequests: { include: { role: true, team: true, user: true } },
             members: { include: { role: true, user: true } },
             chat: {
@@ -76,7 +77,7 @@ class TeamController {
         include: {
           members: { include: { user: { include: { cs2_data: true } }, role: true } },
           neededRoles: true,
-          user: { select: { nickname: true, user_avatar: true, cs2_data: true } },
+          user: { select: { id: true, nickname: true, user_avatar: true, cs2_data: true } },
           teamRequests: { include: { role: true, user: { include: { cs2_data: true } } } },
           chat: {
             include: {
@@ -87,7 +88,7 @@ class TeamController {
                 },
               },
               team: { select: { name: true, avatar: true } },
-              members: { select: { user_avatar: true, nickname: true } },
+              members: { select: { id: true, user_avatar: true, nickname: true } },
             },
           },
         },
@@ -102,24 +103,41 @@ class TeamController {
 
   fetchUpdatedTeam = async (req: Request, res: Response) => {
     const { name } = req.params;
-    console.log(req.body);
-    emitter.once(FETCH_TEAM_EVENT, (team) => {
+
+    emitter.once(FETCH_TEAM_EVENT + name, (team) => {
       if (team.name == name) return res.status(200).json(team);
     });
   };
 
   updateTeam = async (req: Request, res: Response) => {
-    const { name } = req.params;
-    console.log(req.body);
-    // if (name) {
-    //   const team = await prisma.team.update({ data: updatedTeam });
-    //   if (team) {
-    //     return res.status(202).json(team);
-    //   } else {
-    //     return res.status(404).json('not found');
-    //   }
-    // }
-    // emitter.emit(FETCH_TEAM_EVENT,);
+    const id: number = +req.params.id;
+
+    const { avatar, name, ownerRole, description, neededRoles, public: isPublic, teamRequests } = req.body;
+
+    if (id) {
+      const team = await prisma.team.update({
+        where: { id },
+        data: {
+          avatar,
+          name,
+          ownerRole,
+          description,
+          public: isPublic,
+          neededRoles: {
+            set: neededRoles.map((role: { id: number }) => ({ id: role.id })),
+          },
+          // teamRequests: {
+          //   set: teamRequests.map((request: { id: number }) => ({ id: request.id })),
+          // },
+        },
+      });
+      if (team) {
+        return res.status(202).json(team);
+      } else {
+        return res.status(404).json('not found');
+      }
+    }
+    emitter.emit(FETCH_TEAM_EVENT + id);
     return res.status(200);
   };
 }

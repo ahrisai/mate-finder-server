@@ -115,6 +115,7 @@ class AuthController {
           sentRequests: { where: { fromUserId: user.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
           teams: {
             include: {
+              user: true,
               neededRoles: true,
               teamRequests: { include: { role: true, user: { select: { id: true, user_avatar: true, nickname: true, cs2_data: true } } } },
               members: { include: { user: true, role: true } },
