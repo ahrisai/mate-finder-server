@@ -1,4 +1,4 @@
-import { PrismaClient, Team } from '@prisma/client';
+import { PrismaClient, Team, TeamRequest } from '@prisma/client';
 import { Request, Response } from 'express';
 import { emitter } from '../Emitter.js';
 import { FETCH_TEAM_EVENT } from '../consts/TeamRequests.js';
@@ -102,19 +102,24 @@ class TeamController {
   };
 
   fetchUpdatedTeam = async (req: Request, res: Response) => {
-    const { name } = req.params;
+    const id = +req.params.id;
 
-    emitter.once(FETCH_TEAM_EVENT + name, (team) => {
-      if (team.name == name) return res.status(200).json(team);
+    emitter.once(FETCH_TEAM_EVENT + id, (team) => {
+      if (team.id == id) return res.status(200).json(team);
     });
   };
 
   updateTeam = async (req: Request, res: Response) => {
     const id: number = +req.params.id;
 
-    const { avatar, name, ownerRole, description, neededRoles, public: isPublic, teamRequests } = req.body;
+    const { avatar, name, ownerRole, description, neededRoles, public: isPublic, teamRequests, members } = req.body;
 
     if (id) {
+      const dbReqs = await prisma.teamRequest.findMany({ where: { teamId: id } });
+      const currentTeamRequestIds = dbReqs.map((request) => request.id);
+      const incomingTeamRequestIds = teamRequests.map((request: { id: number }) => request.id);
+      const disconnectedReqsIds = currentTeamRequestIds.filter((id) => !incomingTeamRequestIds.includes(id)).map((id) => ({ id }));
+
       const team = await prisma.team.update({
         where: { id },
         data: {
@@ -126,18 +131,43 @@ class TeamController {
           neededRoles: {
             set: neededRoles.map((role: { id: number }) => ({ id: role.id })),
           },
-          // teamRequests: {
-          //   set: teamRequests.map((request: { id: number }) => ({ id: request.id })),
-          // },
+          teamRequests: {
+            deleteMany: disconnectedReqsIds,
+          },
+          members: {
+            updateMany: members.map((member: any) => ({
+              where: { id: member.id },
+              data: { roleId: member.roleId },
+            })),
+          },
+        },
+        include: {
+          members: { include: { user: { include: { cs2_data: true } }, role: true } },
+          neededRoles: true,
+          user: { select: { id: true, nickname: true, user_avatar: true, cs2_data: true } },
+          teamRequests: { include: { role: true, user: { include: { cs2_data: true } } } },
+          chat: {
+            include: {
+              messages: {
+                include: {
+                  user: { select: { id: true, nickname: true, user_avatar: true } },
+                  checked: { include: { user: { select: { id: true } } } },
+                },
+              },
+              team: { select: { name: true, avatar: true } },
+              members: { select: { id: true, user_avatar: true, nickname: true } },
+            },
+          },
         },
       });
       if (team) {
+        emitter.emit(FETCH_TEAM_EVENT + id, team);
         return res.status(202).json(team);
       } else {
         return res.status(404).json('not found');
       }
     }
-    emitter.emit(FETCH_TEAM_EVENT + id);
+
     return res.status(200);
   };
 }
