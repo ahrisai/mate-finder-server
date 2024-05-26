@@ -1,7 +1,7 @@
 import { PrismaClient, Team, TeamRequest } from '@prisma/client';
 import { Request, Response } from 'express';
 import { emitter } from '../Emitter.js';
-import { FETCH_TEAM_EVENT } from '../consts/TeamRequests.js';
+import { FETCH_TEAM_EVENT, FETCH_UPDATED_USER_EVENT } from '../consts/TeamRequests.js';
 
 const prisma = new PrismaClient();
 
@@ -93,6 +93,7 @@ class TeamController {
           },
         },
       });
+
       if (team) {
         return res.status(202).json(team);
       } else {
@@ -169,6 +170,13 @@ class TeamController {
     }
 
     return res.status(200);
+  };
+
+  kickPlayer = async (req: Request, res: Response) => {
+    const memberId: number = Number(req.query.memberId);
+    const deletedMember = await prisma.memberShip.delete({ where: { id: memberId }, select: { id: true, toUserId: true, teamId: true } });
+    emitter.emit(FETCH_UPDATED_USER_EVENT + deletedMember.toUserId);
+    return res.status(200).json(deletedMember);
   };
 }
 

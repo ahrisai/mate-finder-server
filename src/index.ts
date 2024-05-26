@@ -17,7 +17,6 @@ const allowedOrigins = ['http://localhost:5173', 'http://26.173.11.127:5173', 'h
 
 const app = express();
 app
-
   .use(
     cors({
       origin: allowedOrigins,
