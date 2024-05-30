@@ -9,7 +9,7 @@ class TeamController {
   createTeam = async (req: Request, res: Response) => {
     const userId = Number(req.params.userId);
     const newTeam = req.body;
-    console.log(userId);
+
     try {
       const mbTeam = await prisma.team.findFirst({ where: { name: newTeam.name } });
       if (mbTeam) {
@@ -26,7 +26,7 @@ class TeamController {
             user: { connect: { id: newTeam.userId } },
             neededRoles: { connect: newTeam.neededRoles.map((role: { id: number }) => ({ id: role.id })) },
             teamRequests: {
-              create: newTeam.teamRequests.map((req: { roleId: number; toUserId: number }) => ({
+              create: newTeam.teamRequests.map((req: { roleId: number; toUserId: number; isFromTeam: boolean }) => ({
                 user: {
                   connect: { id: req.toUserId },
                 },
@@ -35,6 +35,7 @@ class TeamController {
                     id: req.roleId,
                   },
                 },
+                isFromTeam: req.isFromTeam,
               })),
             },
             chat: { create: { roomId: newTeam.name, members: { connect: { id: userId } } } },
@@ -105,8 +106,34 @@ class TeamController {
   fetchUpdatedTeam = async (req: Request, res: Response) => {
     const id = +req.params.id;
 
-    emitter.once(FETCH_TEAM_EVENT + id, (team) => {
-      if (team.id == id) return res.status(200).json(team);
+    emitter.once(FETCH_TEAM_EVENT + id, async () => {
+      const team = await prisma.team.findFirst({
+        where: { id },
+
+        include: {
+          members: { include: { user: { include: { cs2_data: true } }, role: true } },
+          neededRoles: true,
+          user: { select: { id: true, nickname: true, user_avatar: true, cs2_data: true } },
+          teamRequests: { include: { role: true, user: { include: { cs2_data: true } } } },
+          chat: {
+            include: {
+              messages: {
+                include: {
+                  user: { select: { id: true, nickname: true, user_avatar: true } },
+                  checked: { include: { user: { select: { id: true } } } },
+                },
+              },
+              team: { select: { name: true, avatar: true } },
+              members: { select: { id: true, user_avatar: true, nickname: true } },
+            },
+          },
+        },
+      });
+      if (team) {
+        return res.status(200).json(team);
+      } else {
+        return res.status(404).json('not found');
+      }
     });
   };
 
@@ -162,21 +189,43 @@ class TeamController {
         },
       });
       if (team) {
-        emitter.emit(FETCH_TEAM_EVENT + id, team);
+        emitter.emit(FETCH_TEAM_EVENT + id);
         return res.status(202).json(team);
       } else {
         return res.status(404).json('not found');
       }
     }
-
-    return res.status(200);
   };
 
   kickPlayer = async (req: Request, res: Response) => {
     const memberId: number = Number(req.query.memberId);
-    const deletedMember = await prisma.memberShip.delete({ where: { id: memberId }, select: { id: true, toUserId: true, teamId: true } });
+    const deletedMember = await prisma.memberShip.delete({
+      where: { id: memberId },
+      select: { id: true, toUserId: true, teamId: true, roleId: true },
+    });
+    await prisma.team.update({ where: { id: deletedMember.teamId }, data: { neededRoles: { connect: { id: deletedMember.roleId } } } });
+
     emitter.emit(FETCH_UPDATED_USER_EVENT + deletedMember.toUserId);
+    emitter.emit(FETCH_TEAM_EVENT + deletedMember.teamId);
+
     return res.status(200).json(deletedMember);
+  };
+
+  deleteTeam = async (req: Request, res: Response) => {
+    const teamId: number = Number(req.query.teamId);
+    const teamName: string = req.query.name as string;
+
+    await prisma.chat.delete({ where: { roomId: teamName } });
+    const deletedTeam = await prisma.team.delete({ where: { id: teamId }, include: { chat: true, members: true, teamRequests: true } });
+
+    deletedTeam.members.forEach((member) => {
+      emitter.emit(FETCH_UPDATED_USER_EVENT + member.toUserId);
+    });
+    deletedTeam.teamRequests.forEach((req) => {
+      emitter.emit(FETCH_UPDATED_USER_EVENT + req.toUserId);
+    });
+    emitter.emit(FETCH_TEAM_EVENT + deletedTeam.id);
+    return res.status(200).json(teamId);
   };
 }
 

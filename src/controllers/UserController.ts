@@ -8,11 +8,10 @@ const prisma = new PrismaClient();
 
 class UserController {
   fetchUpdatedUser = async (req: Request, res: Response) => {
-    const jwtUser = req.user as JwtUser;
-    emitter.once(FETCH_UPDATED_USER_EVENT + jwtUser.id, async () => {
-      console.log('da');
+    const id = Number(req.query.id);
+    emitter.once(FETCH_UPDATED_USER_EVENT + id, async () => {
       const user = await prisma.user.findFirst({
-        where: { id: jwtUser.id },
+        where: { id },
         include: {
           cs2_data: {
             include: {
@@ -22,8 +21,8 @@ class UserController {
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
 
-          receivedRequests: { where: { toUserId: jwtUser.id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
-          sentRequests: { where: { fromUserId: jwtUser.id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
+          receivedRequests: { where: { toUserId: id }, include: { fromUser: { select: { nickname: true, user_avatar: true } } } },
+          sentRequests: { where: { fromUserId: id }, include: { toUser: { select: { nickname: true, user_avatar: true } } } },
           teams: {
             include: {
               user: true,
