@@ -227,6 +227,100 @@ class TeamController {
     emitter.emit(FETCH_TEAM_EVENT + deletedTeam.id);
     return res.status(200).json(teamId);
   };
+
+  fetchTeamsList = async (req: Request, res: Response) => {
+    const { searchQuery, page, maxElo, minElo, minAge, maxAge, minWinrate, maxWinrate, minMembersAmount, maxMembersAmount, roles, userId } =
+      req.query;
+    const id = Number(userId);
+
+    const pageNumber = Number(page);
+    const maxEloValue = Number(maxElo);
+    const minEloValue = Number(minElo);
+    const minWinrateValue = Number(minWinrate);
+    const maxWinrateValue = Number(maxWinrate);
+    const minAgeValue = Number(minAge);
+    const maxAgeValue = Number(maxAge);
+    const maxMembersAmountValue = Number(maxMembersAmount);
+    const minMembersAmountValue = Number(minMembersAmount);
+
+    const name = searchQuery as string;
+    const neededRoles = roles as string[];
+    const teamsPerPage = 10;
+
+    const skip: number = (pageNumber - 1) * teamsPerPage;
+    const eloClause = {
+      gte: minEloValue ? minEloValue : undefined,
+      lte: maxEloValue ? maxEloValue : undefined,
+    };
+    const winrateClause = {
+      gte: minWinrateValue ? minWinrateValue : undefined,
+      lte: maxWinrateValue ? maxWinrateValue : undefined,
+    };
+
+    const ageClause = {
+      gte: minAgeValue ? minAgeValue : undefined,
+      lte: maxAgeValue ? maxAgeValue : undefined,
+    };
+    const teams = await prisma.team.findMany({
+      where: {
+        userId: { not: id },
+        name: name ? { contains: name } : undefined,
+        neededRoles: neededRoles
+          ? {
+              some: { name: { in: neededRoles } },
+            }
+          : {},
+        user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause },
+        members: { every: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } } },
+      },
+
+      include: {
+        user: { select: { cs2_data: true, age: true } },
+        members: { select: { user: { select: { cs2_data: true, age: true } } } },
+        neededRoles: true,
+      },
+      skip,
+      take: teamsPerPage,
+    });
+
+    const allTeams = await prisma.team.findMany({
+      where: {
+        userId: { not: id },
+        name: name ? { contains: name } : undefined,
+        neededRoles: neededRoles
+          ? {
+              some: { name: { in: neededRoles } },
+            }
+          : {},
+        user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause },
+        members: { every: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } } },
+      },
+      include: { members: { select: { id: true } } },
+    });
+
+    const filterTeamsByMembers = (team: any) => {
+      const membersCount = team.members.length + 1;
+      if (minMembersAmountValue && maxMembersAmountValue) {
+        return membersCount >= minMembersAmountValue && membersCount <= maxMembersAmountValue;
+      } else if (minMembersAmountValue) {
+        return membersCount >= minMembersAmountValue;
+      } else if (maxMembersAmountValue) {
+        return membersCount <= maxMembersAmountValue;
+      }
+      return true;
+    };
+
+    const finishedTeams = teams.filter(filterTeamsByMembers);
+    const totalCount = allTeams.filter(filterTeamsByMembers).length;
+
+    const totalPages = totalCount / teamsPerPage;
+    let pages = 1;
+    if (totalPages > 1 && totalPages < 2) {
+      pages = Math.round(totalPages) + 1;
+    }
+
+    return res.json({ teams: finishedTeams, pages });
+  };
 }
 
 export default new TeamController();

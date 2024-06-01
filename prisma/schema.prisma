@@ -62,8 +62,8 @@ model Team {
   teamRequests TeamRequest[]
   neededRoles Cs2Roles[]
   ownerRole String
-members MemberShip[]
-chat Chat?
+  members MemberShip[]
+  chat Chat?
 }
 
 

@@ -9,5 +9,6 @@ teamRouter.get('/team/:name', TeamController.fetchTeam);
 teamRouter.get('/updatedTeam/:id', TeamController.fetchUpdatedTeam);
 teamRouter.delete('/kickPlayer', TeamController.kickPlayer);
 teamRouter.delete('/deleteTeam', TeamController.deleteTeam);
+teamRouter.get('/teams', TeamController.fetchTeamsList);
 
 export default teamRouter;

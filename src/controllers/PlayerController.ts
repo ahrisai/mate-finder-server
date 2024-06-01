@@ -59,7 +59,6 @@ class PlayerController {
         maps,
       } = req.query;
 
-      // Преобразование типов при необходимости
       const pageNumberValue = Number(page);
       const minAgeValue = Number(minAge);
       const maxAgeValue = Number(maxAge);
