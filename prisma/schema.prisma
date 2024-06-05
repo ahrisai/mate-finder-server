@@ -103,6 +103,21 @@ model Cs2_data {
   elo          Int
   roles        Cs2_dataCs2Roles[] 
   maps         Cs2_dataCs2Maps[]
+  recentMatches  RecentMatch []
+}
+
+model RecentMatch{
+  id           Int    @id @default(autoincrement())
+  cs2Data         Cs2_data   @relation(fields: [cs2DataId], references: [id], onDelete: Cascade)
+  cs2DataId       Int    
+  map String
+  result Boolean
+  stat String
+  kad String
+  kd Float
+  date DateTime
+  eloChange String
+  link String
 }
 
 model Cs2Roles {

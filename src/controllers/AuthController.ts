@@ -1,8 +1,8 @@
+import { secretKey } from '../config.js';
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { secretKey } from '../config.js';
 import { JwtUser } from '../queryTypes.js';
 
 const generateAccessToken = (id: number, name: string) => {
@@ -50,6 +50,7 @@ class AuthController {
           include: {
             roles: { select: { cs2Role: { select: { name: true } } } },
             maps: { select: { cs2Map: { select: { name: true } } } },
+            recentMatches: true,
           },
         },
         friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
@@ -107,6 +108,7 @@ class AuthController {
             include: {
               roles: { select: { cs2Role: { select: { name: true } } } },
               maps: { select: { cs2Map: { select: { name: true } } } },
+              recentMatches: true,
             },
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },

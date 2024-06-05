@@ -17,6 +17,7 @@ class UserController {
             include: {
               roles: { select: { cs2Role: { select: { name: true } } } },
               maps: { select: { cs2Map: { select: { name: true } } } },
+              recentMatches: true,
             },
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
@@ -52,8 +53,9 @@ class UserController {
         include: {
           cs2_data: {
             include: {
-              roles: { select: { cs2Role: { select: { name: true } } } },
-              maps: { select: { cs2Map: { select: { name: true } } } },
+              roles: { select: { cs2Role: { select: { id: true, name: true } } } },
+              maps: { select: { cs2Map: { select: { id: true, name: true } } } },
+              recentMatches: true,
             },
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },

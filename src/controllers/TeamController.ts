@@ -264,6 +264,7 @@ class TeamController {
     const teams = await prisma.team.findMany({
       where: {
         userId: { not: id },
+        public: true,
         name: name ? { contains: name } : undefined,
         neededRoles: neededRoles
           ? {
@@ -271,13 +272,16 @@ class TeamController {
             }
           : {},
         user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause },
-        members: { every: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } } },
+        members: {
+          some: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } },
+          every: { user: { NOT: { id: id } } },
+        },
       },
 
       include: {
-        user: { select: { cs2_data: true, age: true } },
-        members: { select: { user: { select: { cs2_data: true, age: true } } } },
-        neededRoles: true,
+        user: { select: { cs2_data: true, age: true, id: true } },
+        members: { select: { user: { select: { cs2_data: true, age: true, id: true } } } },
+        neededRoles: { orderBy: { id: 'asc' } },
       },
       skip,
       take: teamsPerPage,
@@ -286,6 +290,8 @@ class TeamController {
     const allTeams = await prisma.team.findMany({
       where: {
         userId: { not: id },
+        public: true,
+
         name: name ? { contains: name } : undefined,
         neededRoles: neededRoles
           ? {
@@ -293,7 +299,7 @@ class TeamController {
             }
           : {},
         user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause },
-        members: { every: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } } },
+        members: { some: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } } },
       },
       include: { members: { select: { id: true } } },
     });

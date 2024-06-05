@@ -1,11 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
-import { Cs2Data, JwtUser } from '../queryTypes.js';
-import faceitParser from '../util/faceitParser.js';
+import { JwtUser } from '../queryTypes.js';
+
 import axios from 'axios';
 import cheerio from 'cheerio';
-import puppeteer from 'puppeteer';
-import { setTimeout } from 'timers/promises';
+
 const prisma = new PrismaClient();
 
 class Cs2Contoller {
@@ -14,44 +13,121 @@ class Cs2Contoller {
       const steamId = req.query.steamId as string;
       console.log(steamId);
       const user = req.user as JwtUser;
-      const browser = await puppeteer.launch();
-      const page = await browser.newPage();
-      page.setDefaultTimeout(5000);
-
-      await page.goto(`https://faceitfinder.com/profile/${steamId}`, { waitUntil: 'networkidle0' });
-
-      const data = await page.evaluate(() => document.documentElement.outerHTML);
-      page.close();
-      browser.close();
+      const { data } = await axios.get<string>(`https://faceittracker.net/steam-profile/${steamId}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
       const $ = cheerio.load(data);
 
-      const faceitData = $('.account-faceit-stats-single').text();
+      const playerLinkElement = $('a.faceit_profile-link');
+      const playerName = playerLinkElement.find('div.left').text().trim();
+      const playerLevelImgSrc = 'https://faceittracker.net' + playerLinkElement.find('div.right img.lvl').attr('src');
+      if (playerName) {
+        const { data } = await axios.get<string>(`https://faceittracker.net/players/${playerName}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        const $ = cheerio.load(data);
 
-      if (faceitData) {
-        const result = faceitParser(faceitData);
-        const faceitLvl = 'https://faceitfinder.com/' + $('.account-faceit-level > a > img').attr('src');
+        const elo = parseInt($('span.player-elo').text());
+        const statsCards = $('.stats-card-wrapper .stats-card');
 
-        if (result) {
-          const cs2Data: Cs2Data = {
-            ...result,
-            lvlImg: faceitLvl,
-            steamId: steamId,
+        let stats: any = {};
+
+        statsCards.each((index, element) => {
+          const title = $(element).find('.stats-card-title').text().trim();
+          const rate = $(element).find('.stats-card-rate').text().trim();
+          stats[title] = rate;
+        });
+        const totalWinsElement = $('li')
+          .filter((i, el) => $(el).text().trim() === 'Total Win:')
+          .next();
+        const totalWins = parseInt(totalWinsElement.text().trim());
+        const kd = parseFloat(stats['K/D Ratio']);
+        const hs = parseFloat(stats['Headshots']);
+        const totalMatches = parseInt(stats['Matches']);
+        const winrate = parseFloat(stats['Winrate']);
+        const recentMatches = $('.r-macthes-wrapper').html();
+        const matchCards = $('a[rel="nofollow"] .r-macthes-card');
+
+        let matches: any = [];
+
+        matchCards.each((index, element) => {
+          let match: any = {};
+          const infoBlocks = $(element).find('.r-macthes-info');
+
+          infoBlocks.each((i, block) => {
+            const title = $(block).find('.title, .result').text().trim();
+            const value = $(block).find('span').text().trim();
+
+            if (title === '') {
+              match.map = value;
+            } else if (title === 'K - A - D') {
+              match.kad = value;
+            } else if (title === 'Elo Point') {
+              match.eloChange = value;
+            } else if (title === 'Loss' || title === 'Win') {
+              match.result = title === 'Loss' ? false : true;
+              match.stat = value;
+            } else if (title === 'Rating') {
+              match.kd = parseFloat(value);
+            } else if (title === 'Date') {
+              const dateString = value.replace(' - ', ' ');
+              match.date = new Date(dateString);
+            } else match[title.toLowerCase()] = value;
+            const matchLink = $(element).parent().attr('href');
+            match.link = 'https://faceittracker.net' + matchLink;
+          });
+
+          matches.push(match);
+        });
+
+        if (totalWins) {
+          const cs2Data: any = {
+            lvlImg: playerLevelImgSrc,
+            steamId,
+            elo,
+            hs,
+            matches: totalMatches,
+            winrate,
+            kd,
+            wins: totalWins,
           };
 
-          const cs2data = await prisma.cs2_data.updateMany({
-            where: { userId: user.id },
-            data: {
-              ...cs2Data,
-            },
-          });
-          return res.status(203).json(cs2Data);
+          const currentCs2Data = await prisma.cs2_data.findFirst({ where: { userId: user.id } });
+
+          if (currentCs2Data) {
+            const newCs2Data = await prisma.cs2_data.update({
+              where: { userId: user.id },
+              data: {
+                elo: cs2Data.elo,
+                hs: cs2Data.hs,
+                kd: cs2Data.kd,
+                matches: cs2Data.matches,
+                lvlImg: cs2Data.lvlImg,
+                winrate: cs2Data.winrate,
+                recentMatches: {
+                  deleteMany: { cs2DataId: currentCs2Data.id },
+                  createMany: { data: matches },
+                },
+              },
+              include: {
+                recentMatches: true,
+                roles: { select: { cs2Role: { select: { id: true, name: true } } } },
+                maps: { select: { cs2Map: { select: { id: true, name: true } } } },
+              },
+            });
+
+            return res.status(203).json(newCs2Data);
+          }
         }
       }
     } catch (error) {}
   };
 
   refillingCs2data = async (req: Request, res: Response) => {
-    // дозаполнение кс данных после подключения faceit
     const user: JwtUser = req.user as JwtUser;
     const { reqMaps, reqRoles } = req.body;
 

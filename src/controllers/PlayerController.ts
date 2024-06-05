@@ -17,6 +17,7 @@ class PlayerController {
             include: {
               roles: { select: { cs2Role: { select: { name: true } } } },
               maps: { select: { cs2Map: { select: { name: true } } } },
+              recentMatches: true,
             },
           },
           friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
@@ -36,6 +37,37 @@ class PlayerController {
       return res.status(500).json('eternal server error =<');
     }
   };
+
+  fetchTopPlayers = async (req: Request, res: Response) => {
+    try {
+      const player = await prisma.user.findFirst({
+        include: {
+          cs2_data: {
+            include: {
+              roles: { select: { cs2Role: { select: { name: true } } } },
+              maps: { select: { cs2Map: { select: { name: true } } } },
+            },
+          },
+          friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
+
+          teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
+          requestsToTeam: { include: { team: true, role: true } },
+          memberOf: { include: { role: true, team: { include: { members: true } } } },
+        },
+        orderBy: { cs2_data: { elo: 'asc' } },
+        take: 5,
+      });
+
+      if (!player) {
+        return res.status(404).json('user is not exist');
+      } else {
+        return res.status(200).json({ ...player, password: undefined });
+      }
+    } catch (error) {
+      return res.status(500).json('eternal server error =<');
+    }
+  };
+
   fetchPlayers = async (req: Request, res: Response) => {
     try {
       const { name } = req.user as JwtUser;
