@@ -40,7 +40,8 @@ class PlayerController {
 
   fetchTopPlayers = async (req: Request, res: Response) => {
     try {
-      const player = await prisma.user.findFirst({
+      const players = await prisma.user.findMany({
+        where: { cs2_data: { isNot: null } },
         include: {
           cs2_data: {
             include: {
@@ -48,20 +49,15 @@ class PlayerController {
               maps: { select: { cs2Map: { select: { name: true } } } },
             },
           },
-          friends: { include: { cs2_data: { select: { lvlImg: true, elo: true, kd: true } } } },
-
-          teams: { include: { neededRoles: true, teamRequests: true, members: { include: { user: true, role: true } } } },
-          requestsToTeam: { include: { team: true, role: true } },
-          memberOf: { include: { role: true, team: { include: { members: true } } } },
         },
-        orderBy: { cs2_data: { elo: 'asc' } },
+        orderBy: { cs2_data: { elo: 'desc' } },
         take: 5,
       });
 
-      if (!player) {
+      if (!players) {
         return res.status(404).json('user is not exist');
       } else {
-        return res.status(200).json({ ...player, password: undefined });
+        return res.status(200).json(players);
       }
     } catch (error) {
       return res.status(500).json('eternal server error =<');
@@ -89,7 +85,9 @@ class PlayerController {
         maxMatchesValue,
         roles,
         maps,
+        id,
       } = req.query;
+      const idValue = Number(id);
 
       const pageNumberValue = Number(page);
       const minAgeValue = Number(minAge);
@@ -106,7 +104,7 @@ class PlayerController {
       const maxMatchesValueNumber = Number(maxMatchesValue);
 
       const playersAndPages = await getPlayersWithFilters(
-        name,
+        idValue,
         gender as string,
         pageNumberValue,
         searchQuery as string,

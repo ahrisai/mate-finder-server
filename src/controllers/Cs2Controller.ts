@@ -4,22 +4,18 @@ import { JwtUser } from '../queryTypes.js';
 
 import axios from 'axios';
 import cheerio from 'cheerio';
+import { parseRelativeDate } from '../util/parseRelativeDate.js';
 
 const prisma = new PrismaClient();
 
 class Cs2Contoller {
   updateCs2Data = async (req: Request, res: Response) => {
     try {
-      const steamId = req.query.steamId as string;
-      console.log(steamId);
-      const user = req.user as JwtUser;
-      const { data } = await axios.get<string>(`https://faceittracker.net/steam-profile/${steamId}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      });
-      const $ = cheerio.load(data);
+      const steamId = (req.query.steamId as string).trim();
+      const id = Number(req.query.id);
+      const { data } = await axios.get<string>(`https://faceittracker.net/steam-profile/${steamId}`, { withCredentials: false });
 
+      const $ = cheerio.load(data);
       const playerLinkElement = $('a.faceit_profile-link');
       const playerName = playerLinkElement.find('div.left').text().trim();
       const playerLevelImgSrc = 'https://faceittracker.net' + playerLinkElement.find('div.right img.lvl').attr('src');
@@ -41,6 +37,8 @@ class Cs2Contoller {
           const rate = $(element).find('.stats-card-rate').text().trim();
           stats[title] = rate;
         });
+        console.log(steamId);
+
         const totalWinsElement = $('li')
           .filter((i, el) => $(el).text().trim() === 'Total Win:')
           .next();
@@ -74,8 +72,12 @@ class Cs2Contoller {
             } else if (title === 'Rating') {
               match.kd = parseFloat(value);
             } else if (title === 'Date') {
-              const dateString = value.replace(' - ', ' ');
-              match.date = new Date(dateString);
+              if (!value.includes('ago')) {
+                const dateString = value.replace(' - ', ' ');
+                match.date = new Date(dateString);
+              } else {
+                match.date = parseRelativeDate(value);
+              }
             } else match[title.toLowerCase()] = value;
             const matchLink = $(element).parent().attr('href');
             match.link = 'https://faceittracker.net' + matchLink;
@@ -96,11 +98,11 @@ class Cs2Contoller {
             wins: totalWins,
           };
 
-          const currentCs2Data = await prisma.cs2_data.findFirst({ where: { userId: user.id } });
-
+          const currentCs2Data = await prisma.cs2_data.findFirst({ where: { userId: id } });
+          console.log(currentCs2Data);
           if (currentCs2Data) {
             const newCs2Data = await prisma.cs2_data.update({
-              where: { userId: user.id },
+              where: { userId: id },
               data: {
                 elo: cs2Data.elo,
                 hs: cs2Data.hs,
@@ -172,6 +174,50 @@ class Cs2Contoller {
       return res.status(200).json('deleted successfully');
     } catch (error) {
       console.log('не удалил кс2 дату');
+    }
+  };
+
+  fetchMaps = async (req: Request, res: Response) => {
+    const maps = await prisma.cs2Maps.findMany({});
+    const mapsArr = maps.map((map) => ({ id: map.id, value: map.name, label: map.name }));
+    return res.json(mapsArr);
+  };
+
+  updateRolesAndMaps = async (req: Request, res: Response) => {
+    const user: JwtUser = req.user as JwtUser;
+    const { reqMaps, reqRoles } = req.body;
+
+    const cs2data = await prisma.cs2_data.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (cs2data) {
+      await prisma.cs2_dataCs2Roles.deleteMany({ where: { cs2_dataId: cs2data.id } });
+      await prisma.cs2_dataCs2Maps.deleteMany({ where: { cs2_dataId: cs2data.id } });
+      await prisma.cs2_dataCs2Maps.createMany({
+        data: reqMaps.map((id: number) => ({
+          cs2MapId: id,
+          cs2_dataId: cs2data.id,
+        })),
+      });
+      await prisma.cs2_dataCs2Roles.createMany({
+        data: reqRoles.map((id: number) => ({
+          cs2RoleId: id,
+          cs2_dataId: cs2data.id,
+        })),
+      });
+
+      const updatedData = await prisma.cs2_data.findFirst({
+        where: { id: cs2data.id },
+
+        include: {
+          roles: { select: { cs2Role: { select: { name: true } } } },
+          maps: { select: { cs2Map: { select: { name: true } } } },
+        },
+      });
+      if (updatedData) {
+        return res.json(updatedData);
+      }
     }
   };
 }

@@ -131,9 +131,8 @@ model Cs2Roles {
 
 model Cs2Maps {
   id   Int    @id @default(autoincrement())
-  name String @unique
+  name String 
   maps        Cs2_dataCs2Maps []
-  
 }
 
 model Cs2_dataCs2Roles {
@@ -148,7 +147,7 @@ model Cs2_dataCs2Roles {
 model Cs2_dataCs2Maps {
   cs2_data    Cs2_data @relation(fields: [cs2_dataId], references: [id], onDelete: Cascade)
   cs2_dataId  Int
-  cs2Map Cs2Maps @relation(fields: [cs2MapId], references: [id])
+  cs2Map Cs2Maps @relation(fields: [cs2MapId], references: [id], onDelete: Cascade)
   cs2MapId Int
 
   @@id([cs2_dataId, cs2MapId])

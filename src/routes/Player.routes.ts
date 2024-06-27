@@ -6,6 +6,6 @@ const playerRouter = Router();
 
 playerRouter.get('/playerByName', PlayerController.fetchPlayerByName);
 playerRouter.get('/players', PlayerController.fetchPlayers);
-playerRouter.get('/fetchTopPlayers', PlayerController.fetchPlayers);
+playerRouter.get('/topPlayers', PlayerController.fetchTopPlayers);
 
 export default playerRouter;

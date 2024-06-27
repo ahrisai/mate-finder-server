@@ -11,16 +11,17 @@ import dotenv from 'dotenv';
 import chatRouter from './routes/chat.routes.js';
 import teamRouter from './routes/team.routes.js';
 import newsRouter from './routes/news.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 dotenv.config();
 
-const allowedOrigins = ['http://localhost:5173', 'http://26.173.11.127:5173', 'https://squadlink.vercel.app'];
+const allowedOrigins = ['http://localhost:5173'];
 
 const app = express();
 app
   .use(
     cors({
-      origin: allowedOrigins,
+      origin: true,
       credentials: true,
     })
   )
@@ -38,7 +39,8 @@ app
   .use('/api', userRouter)
   .use('/api', chatRouter)
   .use('/api', teamRouter)
-  .use('/api', newsRouter);
+  .use('/api', newsRouter)
+  .use('/api', adminRouter);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

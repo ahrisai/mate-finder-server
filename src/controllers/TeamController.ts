@@ -13,7 +13,7 @@ class TeamController {
     try {
       const mbTeam = await prisma.team.findFirst({ where: { name: newTeam.name } });
       if (mbTeam) {
-        return res.status(400).json('Такая команда уже существует');
+        return res.status(400).json(`Команда с название "${newTeam.name}" уже существует`);
       } else {
         const team = await prisma.team.create({
           data: {
@@ -143,6 +143,10 @@ class TeamController {
     const { avatar, name, ownerRole, description, neededRoles, public: isPublic, teamRequests, members } = req.body;
 
     if (id) {
+      const mbTeam = await prisma.team.findFirst({ where: { name: name } });
+      if (mbTeam && mbTeam.id !== id) {
+        return res.status(400).json(`Команда с название "${name}" уже существует`);
+      }
       const dbReqs = await prisma.teamRequest.findMany({ where: { teamId: id } });
       const currentTeamRequestIds = dbReqs.map((request) => request.id);
       const incomingTeamRequestIds = teamRequests.map((request: { id: number }) => request.id);
@@ -202,6 +206,10 @@ class TeamController {
     const deletedMember = await prisma.memberShip.delete({
       where: { id: memberId },
       select: { id: true, toUserId: true, teamId: true, roleId: true },
+    });
+    await prisma.chat.update({
+      where: { teamId: deletedMember.teamId },
+      data: { members: { disconnect: { id: deletedMember.toUserId } } },
     });
     await prisma.team.update({ where: { id: deletedMember.teamId }, data: { neededRoles: { connect: { id: deletedMember.roleId } } } });
 
@@ -265,7 +273,7 @@ class TeamController {
       where: {
         userId: { not: id },
         public: true,
-        name: name ? { contains: name } : undefined,
+        name: name ? { contains: name } : {},
         neededRoles: neededRoles
           ? {
               some: { name: { in: neededRoles } },
@@ -273,8 +281,8 @@ class TeamController {
           : {},
         user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause },
         members: {
-          some: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } },
-          every: { user: { NOT: { id: id } } },
+          // some: { user: { cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } },
+          every: { user: { NOT: { id: id }, cs2_data: { elo: eloClause, winrate: winrateClause }, age: ageClause } },
         },
       },
 

@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const getPlayersWithFilters = async (
-  nickname: string,
+  idValue: number,
   gender?: string,
   pageNumber: number = 1,
   searchQuery?: string,
@@ -56,13 +56,14 @@ export const getPlayersWithFilters = async (
 
   const players = await prisma.user.findMany({
     where: {
+      id: { not: idValue },
       nickname: searchQuery
         ? {
-            not: { in: ['admin', nickname] },
+            not: { in: ['admin'] },
             contains: searchQuery,
           }
         : {
-            not: { in: ['admin', nickname] },
+            not: { in: ['admin'] },
           },
 
       gender: gender !== '' ? gender : {},
@@ -116,13 +117,14 @@ export const getPlayersWithFilters = async (
 
   const totalCount = await prisma.user.count({
     where: {
+      id: { not: idValue },
       nickname: searchQuery
         ? {
-            not: { in: ['admin', nickname] },
+            not: { in: ['admin'] },
             contains: searchQuery,
           }
         : {
-            not: { in: ['admin', nickname] },
+            not: { in: ['admin'] },
           },
       gender: gender !== '' ? gender : {},
       age: ageClause,
@@ -160,11 +162,14 @@ export const getPlayersWithFilters = async (
     },
   });
   if (players.length) {
-    const totalPages = totalCount / playersPerPage;
     let pages = 1;
-    if (totalPages > 1 && totalPages < 2) {
-      pages = Math.round(totalPages) + 1;
-    }
+
+    const total = Number((totalCount / playersPerPage).toFixed(1));
+    console.log(totalCount);
+    console.log(total);
+    if (total % 1 >= 0.1 && total % 1 <= 0.9) {
+      pages = Math.floor(total) + 1;
+    } else pages = Math.ceil(total / playersPerPage);
 
     return { players, pages };
   } else {
